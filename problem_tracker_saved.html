@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>문제지 진행률 트래커</title>
+<style>
+  body { font-family: sans-serif; margin: 40px; background: #f4f4f4; }
+  h1 { text-align: center; }
+  .sheet { background: white; padding: 15px; margin-bottom: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+  .bar { height: 20px; background: #ddd; border-radius: 5px; overflow: hidden; }
+  .fill { height: 100%; background: #4CAF50; width: 0%; transition: width 0.3s; }
+  button { margin-top: 10px; }
+</style>
+</head>
+<body>
+
+<h1>📘 문제지 진행률 트래커</h1>
+
+<div>
+  <input id="sheetName" placeholder="문제지 이름" />
+  <input id="total" type="number" placeholder="전체 문제 수" min="1" />
+  <button onclick="addSheet()">문제지 추가</button>
+</div>
+
+<div id="sheets"></div>
+
+<script>
+let sheets = JSON.parse(localStorage.getItem("sheets") || "{}");
+
+function saveData() {
+  localStorage.setItem("sheets", JSON.stringify(sheets));
+}
+
+function render() {
+  const container = document.getElementById("sheets");
+  container.innerHTML = "";
+  for (let name in sheets) {
+    const sheet = sheets[name];
+    const percent = Math.min((sheet.done / sheet.total) * 100, 100).toFixed(1);
+    container.innerHTML += `
+      <div class="sheet">
+        <h3>${name}</h3>
+        <p>${sheet.done} / ${sheet.total} 문제 (${percent}%)</p>
+        <div class="bar"><div class="fill" style="width:${percent}%;"></div></div>
+        <input type="number" id="input-${name}" placeholder="풀 문제 개수 입력" min="1" />
+        <button onclick="addProgress('${name}')">진행 추가</button>
+        <button onclick="deleteSheet('${name}')">삭제</button>
+      </div>
+    `;
+  }
+}
+
+function addSheet() {
+  const name = document.getElementById("sheetName").value.trim();
+  const total = parseInt(document.getElementById("total").value);
+  if (!name || !total) {
+    alert("문제지 이름과 전체 문제 수를 입력하세요.");
+    return;
+  }
+  if (sheets[name]) {
+    alert("이미 있는 문제지입니다!");
+    return;
+  }
+  sheets[name] = { done: 0, total: total };
+  saveData();
+  render();
+  document.getElementById("sheetName").value = "";
+  document.getElementById("total").value = "";
+}
+
+function addProgress(name) {
+  const input = document.getElementById(`input-${name}`);
+  const add = parseInt(input.value);
+  if (!add || add < 1) return;
+  sheets[name].done = Math.min(sheets[name].done + add, sheets[name].total);
+  saveData();
+  render();
+}
+
+function deleteSheet(name) {
+  if (confirm(`${name} 문제지를 삭제할까요?`)) {
+    delete sheets[name];
+    saveData();
+    render();
+  }
+}
+
+render();
+</script>
+</body>
+</html>
